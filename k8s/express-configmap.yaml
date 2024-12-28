@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: express-configmap
+data:
+  DATABASE_URL: "postgres://postgres:postgres@postgres-service:5432/plantZ"
+  FLASK_API_URL: "http://flask-service:5000/predict"
+  FLASK_API_GRADCAM: "http://flask-service:5000/gradcam"
+  JWT_SECRET: "secret_key"
+  CORS_ORIGIN: "http://react-service:5173"
+  CORS_ORIGIN_KUBERNETES: "http://react-service:5173"

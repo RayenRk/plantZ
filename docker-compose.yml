@@ -1,0 +1,63 @@
+services:
+  postgres-service:
+    image: postgres:latest
+    container_name: plantz-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: plantZ
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - plantz-network
+
+  express-service:
+    image: express-backend:v5
+    container_name: express-service
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres-service:5432/plantZ
+      FLASK_API_URL: http://flask-service:5000/predict
+      FLASK_API_GRADCAM: http://flask-service:5000/gradcam
+      JWT_SECRET: secret_key
+      CORS_ORIGIN: http://localhost:5173
+    depends_on:
+      - postgres-service
+      - flask-service
+    command: sh -c "npx prisma migrate deploy && npm start"  # Run Prisma migrations before starting the app
+    ports:
+      - "8080:8080"
+    networks:
+      - plantz-network
+
+  flask-service:
+    image: model-api
+    container_name: flask-service
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres-service:5432/plantZ
+    ports:
+      - "5000:5000"
+    networks:
+      - plantz-network
+
+  react-service:
+    image: react-frontend:v5
+    container_name: react-service
+    environment:
+      VITE_API_URL: http://express-service:8080/api  # Backend URL for the frontend
+      VITE_API_FLASK_URL: http://flask-service:5000/gradcam  # Flask URL for the frontend
+    depends_on:
+      - express-service
+      - flask-service
+    ports:
+      - "5173:5173"  # Expose React frontend on port 5173
+    networks:
+      - plantz-network
+
+volumes:
+  postgres-data:
+
+networks:
+  plantz-network:
+    driver: bridge

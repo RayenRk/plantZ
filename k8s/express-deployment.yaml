@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: express-backend-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: express-backend
+  template:
+    metadata:
+      labels:
+        app: express-backend
+    spec:
+      containers:
+      - name: express-backend
+        image: rayenrk/express-backend:v4
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: express-configmap
+      initContainers:
+        - name: prisma-migrate
+          image: rayenrk/express-backend
+          command: ["npx", "prisma", "migrate", "deploy"]
+          env:
+            - name: DATABASE_URL
+              value: "postgres://postgres:postgres@postgres-service:5432/plantZ"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: express-service
+spec:
+  selector:
+    app: express-backend
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
